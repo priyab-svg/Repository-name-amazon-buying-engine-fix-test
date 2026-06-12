@@ -64,6 +64,12 @@ def parse_keepa_xlsx(file_bytes: bytes) -> tuple[pd.DataFrame, dict]:
     # Rename to normalised names
     df = df.rename(columns={k: v for k, v in _ALIAS.items() if k in df.columns})
 
+    # Drop duplicate columns — Keepa exports can include both "ASIN" and "asin"
+    # headers; both alias to "asin", leaving two identical column names.
+    # df["asin"] then returns a DataFrame instead of a Series, and DataFrame
+    # has no .str accessor → 'DataFrame' object has no attribute 'str'.
+    df = df.loc[:, ~df.columns.duplicated(keep="first")]
+
     # Validate ASIN column exists
     if "asin" not in df.columns:
         raise ValueError(
@@ -72,7 +78,10 @@ def parse_keepa_xlsx(file_bytes: bytes) -> tuple[pd.DataFrame, dict]:
         )
 
     # Clean & validate ASINs
-    df["asin"] = df["asin"].astype(str).str.strip().str.upper()
+    asin_col = df["asin"]
+    if isinstance(asin_col, pd.DataFrame):
+        asin_col = asin_col.iloc[:, 0]
+    df["asin"] = asin_col.astype(str).str.strip().str.upper()
     df = df[df["asin"].str.match(r"^[A-Z0-9]{10}$")].copy()
 
     if df.empty:
@@ -82,7 +91,10 @@ def parse_keepa_xlsx(file_bytes: bytes) -> tuple[pd.DataFrame, dict]:
     for col in ["title", "brand", "category", "description"]:
         if col not in df.columns:
             df[col] = ""
-        df[col] = df[col].fillna("").astype(str).str.strip()
+        series = df[col]
+        if isinstance(series, pd.DataFrame):
+            series = series.iloc[:, 0]
+        df[col] = series.fillna("").astype(str).str.strip()
 
     # Build keepa_export lookup dict
     keepa_export = {}

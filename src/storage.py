@@ -173,4 +173,7 @@ def get_known_asins(df: pd.DataFrame | None = None) -> set:
         df = load_results_db()
     if df.empty:
         return set()
-    return set(df["ASIN"].str.upper().tolist())
+    asin_col = df["ASIN"]
+    if isinstance(asin_col, pd.DataFrame):
+        asin_col = asin_col.iloc[:, 0]
+    return set(asin_col.str.upper().tolist())

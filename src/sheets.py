@@ -74,6 +74,7 @@ def read_sheet() -> pd.DataFrame:
     data = sheet.get_all_records()
     df = pd.DataFrame(data)
     df.columns = df.columns.str.strip()
+    df = df.loc[:, ~df.columns.duplicated(keep="first")]
     df[ASIN_COL] = df[ASIN_COL].astype(str).str.strip()
     return df
 
