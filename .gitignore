@@ -1,8 +1,8 @@
 # ── Secrets & credentials — NEVER commit these
 .env
 gen-lang-client*.json
-*service_account*.json
 *credentials*.json
+# service_account.json is intentionally committed for Streamlit Cloud deployment
 
 # ── Keepa cache & local data
 keepa_cache.json
